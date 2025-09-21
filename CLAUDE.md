@@ -50,10 +50,28 @@ Note: The package.json only defines the test script; other operations would need
 
 ## Configuration Requirements
 
-Before use, update `src/config.ts`:
-- `baseUrl`: Your iTop server REST endpoint
-- `username`: iTop API user (requires "REST Services User" profile)
-- `password`: iTop API password
+**Security Note**: Credentials are stored in `.creds/config.json` which is excluded from version control.
+
+### Initial Setup
+1. Copy the example configuration: `cp doc/config-example.json .creds/config.json`
+2. Edit `.creds/config.json` with your iTop server details:
+   - `baseUrl`: Your iTop server REST endpoint (e.g., `https://itop-server.com/webservices/rest.php`)
+   - `auth_token`: iTop API token (preferred method)
+   - `username`: iTop API user (alternative to token, requires "REST Services User" profile)
+   - `password`: iTop API password (alternative to token)
+   - `apiVersion`: API version (default: "1.3")
+
+### Configuration File Structure
+The `.creds/config.json` file follows this format:
+```json
+{
+  "baseUrl": "https://your-itop-server.com/webservices/rest.php",
+  "auth_token": "your_auth_token_here",
+  "apiVersion": "1.3"
+}
+```
+
+**Important**: The `.creds/` directory is automatically excluded from Git to protect sensitive information.
 
 ## CMD Connector Integration
 
@@ -72,6 +90,9 @@ The `ITopApiClient` class provides:
 - Typed interfaces for all API interactions
 - 30-second timeout for API calls
 - Form-data based API requests matching iTop REST requirements
+- SSL certificate handling (accepts self-signed certificates)
+- Token-based and username/password authentication
+- Debug logging for troubleshooting API calls
 
 ## Error Handling
 

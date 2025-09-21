@@ -14,10 +14,36 @@ npm install
 ```
 
 ### 2. Configure iTop Connection
-Edit `src/config.ts` and update:
-- `baseUrl`: Your iTop server URL
-- `username`: iTop API user (must have "REST Services User" profile)
-- `password`: iTop API password
+**Important**: Credentials are stored securely outside of version control.
+
+1. Create configuration directory (if not exists):
+   ```bash
+   mkdir -p .creds
+   ```
+
+2. Copy the example configuration:
+   ```bash
+   cp doc/config-example.json .creds/config.json
+   ```
+
+3. Edit `.creds/config.json` with your iTop server details:
+   ```json
+   {
+     "baseUrl": "https://your-itop-server.com/webservices/rest.php",
+     "auth_token": "your_auth_token_here",
+     "apiVersion": "1.3"
+   }
+   ```
+
+   **Authentication Options:**
+   - **Preferred**: Use `auth_token` (iTop API token)
+   - **Alternative**: Use `username` + `password` (user must have "REST Services User" profile)
+
+4. Secure the configuration file:
+   ```bash
+   chmod 600 .creds/config.json
+   chown midpoint:midpoint .creds/config.json
+   ```
 
 ### 3. Build TypeScript
 ```bash
@@ -118,43 +144,63 @@ npm run test  # or other commands
 
 ### Check iTop API Manually
 ```bash
+# Using token authentication (preferred)
 curl -X POST \
-  -F 'version=1.3' \
+  -F 'auth_token=your_auth_token' \
+  -F 'json_data={"operation":"list_operations"}' \
+  'https://your-itop-server/webservices/rest.php?version=1.3'
+
+# Using username/password authentication  
+curl -X POST \
   -F 'auth_user=your_user' \
   -F 'auth_pwd=your_password' \
   -F 'json_data={"operation":"list_operations"}' \
-  https://your-itop-server/webservices/rest.php
+  'https://your-itop-server/webservices/rest.php?version=1.3'
+
+# For self-signed certificates, add:
+curl -k ...
 ```
 
 ## Production Considerations
 
-1. **Security**: Store credentials securely (environment variables, secrets management)
+1. **Security**: 
+   - Credentials are already stored securely in `.creds/config.json` (excluded from Git)
+   - Set proper file permissions: `chmod 600 .creds/config.json`
+   - Consider using dedicated service accounts for iTop API access
 2. **Logging**: Add proper logging for production use
 3. **Error Handling**: Enhance error handling and retry logic
 4. **Performance**: Consider connection pooling for high-volume operations
 5. **Monitoring**: Set up monitoring for script execution failures
+6. **SSL Certificates**: Client handles self-signed certificates automatically
 
 ## File Structure
 ```
 /opt/midpoint/scripts/itop-nodejs/
 ├── package.json
 ├── tsconfig.json
+├── .gitignore
 ├── src/
-│   ├── config.ts
+│   ├── config.ts          # Loads from .creds/config.json
 │   ├── types.ts
-│   ├── itop-client.ts
+│   ├── itop-client.ts     # Main API client with SSL support
 │   ├── cmd-utils.ts
 │   ├── test.ts
 │   ├── create.ts
 │   ├── update.ts
 │   ├── search.ts
 │   └── delete.ts
-├── dist/          # Compiled JavaScript (auto-generated)
-├── node_modules/  # Dependencies (auto-generated)
-├── test.sh        # Shell wrappers for CMD connector
+├── .creds/
+│   └── config.json        # Secure credentials (not in Git)
+├── doc/
+│   └── config-example.json # Configuration template
+├── dist/                  # Compiled JavaScript (auto-generated)
+├── node_modules/          # Dependencies (auto-generated)
+├── test.sh                # Shell wrappers for CMD connector
 ├── create.sh
 ├── update.sh
 ├── search.sh
 ├── delete.sh
-└── INSTALL.md
+├── README.md
+├── INSTALL.md
+└── CLAUDE.md
 ```
