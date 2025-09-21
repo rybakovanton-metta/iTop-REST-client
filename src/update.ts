@@ -1,8 +1,8 @@
 // ===========================================
 // src/update.ts - Update Person Script
 // ===========================================
-import { ITopApiClient } from './itop-client';
-import { CmdUtils } from './cmd-utils';
+import { ITopApiClient } from './itop-client.js';
+import { CmdUtils } from './cmd-utils.js';
 
 async function main(): Promise<void> {
   try {
@@ -39,6 +39,4 @@ async function main(): Promise<void> {
   }
 }
 
-if (require.main === module) {
-  main();
-}
+main();
