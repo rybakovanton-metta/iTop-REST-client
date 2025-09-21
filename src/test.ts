@@ -1,7 +1,7 @@
 // ===========================================
 // src/test.ts - Test Connection Script
 // ===========================================
-import { ITopApiClient } from './itop-client';
+import { ITopApiClient } from './itop-client.js';
 
 async function main(): Promise<void> {
   try {
@@ -21,6 +21,4 @@ async function main(): Promise<void> {
   }
 }
 
-if (require.main === module) {
-  main();
-}
+main();

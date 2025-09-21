@@ -1,7 +1,7 @@
 // ===========================================
 // src/cmd-utils.ts - CMD Connector Utilities
 // ===========================================
-import { CmdConnectorArgs, PersonData } from './types';
+import { CmdConnectorArgs, PersonData } from './types.js';
 
 export class CmdUtils {
   static parseArgs(args: string[]): CmdConnectorArgs {

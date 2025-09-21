@@ -3,8 +3,8 @@
 // ===========================================
 import axios, { AxiosResponse } from 'axios';
 import FormData from 'form-data';
-import { config } from './config';
-import { ITopApiRequest, ITopApiResponse, PersonData } from './types';
+import { config } from './config.js';
+import { ITopApiRequest, ITopApiResponse, PersonData } from './types.js';
 
 export class ITopApiClient {
   private readonly baseUrl: string;

@@ -1,0 +1,7 @@
+{
+  "baseUrl": "https://your-itop-server.com/webservices/rest.php",
+  "username": "your_itop_username",
+  "password": "your_itop_password",
+  "auth_token": "your_auth_token_here",
+  "apiVersion": "1.3"
+}
