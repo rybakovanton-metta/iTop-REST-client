@@ -3,6 +3,7 @@
 // ===========================================
 import axios, { AxiosResponse } from 'axios';
 import FormData from 'form-data';
+import https from 'https';
 import { config } from './config.js';
 import { ITopApiRequest, ITopApiResponse, PersonData } from './types.js';
 
@@ -12,10 +13,12 @@ export class ITopApiClient {
   private readonly password?: string;
   private readonly authToken?: string;
   private readonly apiVersion: string;
+  private readonly debug: boolean;
 
-  constructor() {
+  constructor(debug: boolean = false) {
     this.baseUrl = config.baseUrl;
     this.apiVersion = config.apiVersion;
+    this.debug = debug;
     
     // Assign optional properties only if they exist
     if (config.username !== undefined) {
@@ -34,10 +37,29 @@ export class ITopApiClient {
     }
   }
 
+  private debugRequest(requestData: ITopApiRequest, urlWithVersion: string): void {
+    if (this.debug) {
+      console.log('=== iTop API Request Debug ===');
+      console.log('URL:', urlWithVersion);
+      console.log('Request Data:', JSON.stringify(requestData, null, 2));
+      console.log('Auth Method:', this.authToken ? 'Token' : 'Username/Password');
+      console.log('==============================');
+    }
+  }
+
+  private debugResponse(response: ITopApiResponse): void {
+    if (this.debug) {
+      console.log('=== Search Response Debug ===');
+      console.log('Response code:', response.code);
+      console.log('Response message:', response.message);
+      console.log('Response objects:', response.objects ? Object.keys(response.objects).length + ' objects' : 'null');
+      console.log('=============================');
+    }
+  }
+
   async makeRequest(requestData: ITopApiRequest): Promise<ITopApiResponse> {
     try {
       const formData = new FormData();
-      formData.append('version', this.apiVersion);
       
       // Use token authentication if available, otherwise use username/password
       if (this.authToken) {
@@ -51,11 +73,20 @@ export class ITopApiClient {
       
       formData.append('json_data', JSON.stringify(requestData));
 
-      const response: AxiosResponse = await axios.post(this.baseUrl, formData, {
+      // Add version as URL parameter according to iTop documentation
+      const urlWithVersion = `${this.baseUrl}?version=${this.apiVersion}`;
+
+      // Debug logging
+      this.debugRequest(requestData, urlWithVersion);
+
+      const response: AxiosResponse = await axios.post(urlWithVersion, formData, {
         headers: {
           ...formData.getHeaders(),
         },
         timeout: 30000, // 30 second timeout
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false // Accept self-signed certificates
+        })
       });
 
       const result: ITopApiResponse = response.data;
@@ -168,15 +199,18 @@ export class ITopApiClient {
 
   async searchPersons(query?: string, limit: number = 100): Promise<PersonData[]> {
     const searchKey = query 
-      ? `SELECT Person WHERE name LIKE '%${query}%' OR email LIKE '%${query}%' LIMIT ${limit}`
-      : `SELECT Person LIMIT ${limit}`;
+      ? `SELECT Person WHERE name LIKE '%${query}%' OR first_name LIKE '%${query}%' OR email LIKE '%${query}%'`
+      : `SELECT Person`;
 
     const response = await this.makeRequest({
       operation: 'core/get',
       class: 'Person',
       key: searchKey,
-      output_fields: 'id,name,first_name,email,phone,org_id,status,function'
+      output_fields: 'id,name,first_name,email,phone,org_id,status,function',
+      limit: limit
     });
+
+    this.debugResponse(response);
 
     if (!response.objects) {
       return [];

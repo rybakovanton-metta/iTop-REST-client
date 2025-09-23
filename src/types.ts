@@ -8,6 +8,7 @@ export interface PersonData {
   email?: string;
   phone?: string;
   org_id?: number | string;
+  org_name?: string;
   status?: string;
   function?: string;
   [key: string]: unknown;
@@ -21,6 +22,7 @@ export interface ITopApiRequest {
   output_fields?: string;
   fields?: Record<string, unknown>;
   simulate?: boolean;
+  limit?: number;
 }
 
 export interface ITopApiResponse {

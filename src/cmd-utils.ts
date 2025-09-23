@@ -2,6 +2,7 @@
 // src/cmd-utils.ts - CMD Connector Utilities
 // ===========================================
 import { CmdConnectorArgs, PersonData } from './types.js';
+import { CIMPersonConverter, CIMPerson } from './cim-person.js';
 
 export class CmdUtils {
   static parseArgs(args: string[]): CmdConnectorArgs {
@@ -47,18 +48,35 @@ export class CmdUtils {
   }
 
   static buildPersonData(attributes: Record<string, string>): PersonData {
+    // Convert MidPoint args to CIM Person model
+    const cimPerson = CIMPersonConverter.fromMidPointArgs(attributes);
+    
+    // Convert CIM Person to iTop PersonData
+    const itopData = CIMPersonConverter.toITopPersonData(cimPerson);
+    
+    // Ensure required fields for PersonData interface
     const personData: PersonData = {
-      name: attributes['name'] || '',
-      org_id: parseInt(attributes['org_id'] || '1') || 1,
-      status: attributes['status'] || 'active'
+      name: (itopData['name'] as string) || '',
+      status: (itopData['status'] as string) || 'active',
     };
 
-    // Map optional attributes
-    if (attributes['first_name']) personData.first_name = attributes['first_name'];
-    if (attributes['email']) personData.email = attributes['email'];
-    if (attributes['phone']) personData.phone = attributes['phone'];
-    if (attributes['function']) personData.function = attributes['function'];
+    // Add optional fields if they exist
+    if (itopData['first_name']) personData.first_name = itopData['first_name'] as string;
+    if (itopData['email']) personData.email = itopData['email'] as string;
+    if (itopData['phone']) personData.phone = itopData['phone'] as string;
+    if (itopData['function']) personData.function = itopData['function'] as string;
+    
+    // Handle organization - keep as name for now, will be resolved by iTop API client
+    if (itopData['org_name']) {
+      personData['org_name'] = itopData['org_name'] as string;
+    } else {
+      personData.org_id = 1; // Default fallback
+    }
 
     return personData;
+  }
+
+  static buildCIMPerson(attributes: Record<string, string>): CIMPerson {
+    return CIMPersonConverter.fromMidPointArgs(attributes);
   }
 }
