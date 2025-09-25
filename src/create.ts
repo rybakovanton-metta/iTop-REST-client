@@ -1,48 +1,34 @@
 // ===========================================
 // src/create.ts - Create Person Script
 // ===========================================
-import { ConnectorFactory } from './connector-factory.js';
-import { CIMPersonConverter } from './cim-person.js';
-import { CmdUtils } from './cmd-utils.js';
+import { BaseScript } from './base-script.js';
+import { IConnector } from './interfaces/connector-interface.js';
+import { MidPointIntegration } from './midpoint-integration.js';
 
-async function main(): Promise<void> {
-  try {
-    const args = process.argv.slice(2);
-    
-    // Check for debug flag
-    const debugFlag = args.includes('--debug') || args.includes('-d');
-    const filteredArgs = args.filter(arg => arg !== '--debug' && arg !== '-d');
-    
-    // Get system name (required)
-    const system = filteredArgs[0];
-    if (!system) {
-      throw new Error('System name is required as first argument (e.g., "itop", "ldap", "servicenow")');
-    }
-    
-    // Parse remaining arguments
-    const remainingArgs = filteredArgs.slice(1);
-    const { name, attributes } = CmdUtils.parseArgs(remainingArgs);
+class CreateScript extends BaseScript {
+  protected static override readonly operationName = 'person creation';
 
-    if (!name) {
-      throw new Error('Name is required for person creation');
+  protected async performOperation(connector: IConnector): Promise<void> {
+    // Validate required fields
+    if (!this.name) {
+      throw new Error(`name is required for ${CreateScript.operationName}`);
     }
 
     // Convert MidPoint args to CIM Person
-    const cimPerson = CIMPersonConverter.fromMidPointArgs({ ...attributes, name });
+    const cimPerson = MidPointIntegration.convertFromMidPointArgs({ ...this.attributes, name: this.name });
     
-    // Create connector and create person
-    const connector = await ConnectorFactory.create(system);
-    const result = await connector.createPerson(cimPerson, debugFlag);
+    // Create person
+    const result = await connector.createPerson(cimPerson);
     
-    // Output the created person data (convert back to PersonData format for cmd-utils)
-    const personData = { ...result.data, id: parseInt(result.id) };
-    CmdUtils.outputPersonData(personData, result.id);
-    
-    process.exit(0);
-  } catch (error) {
-    console.error('Create failed:', error);
-    process.exit(1);
+    // Output the created person data
+    // Convert the result back to CIM Person for output
+    const createdCimPerson = await connector.getPerson(result.id);
+    if (createdCimPerson) {
+      MidPointIntegration.outputCIMPersonForCMD(createdCimPerson, result.id);
+    }
   }
 }
 
-main();
+// Instantiate and run the script
+const script = new CreateScript();
+script.execute();

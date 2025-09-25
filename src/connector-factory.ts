@@ -1,7 +1,8 @@
 // ===========================================
 // src/connector-factory.ts - Dynamic Connector Factory
 // ===========================================
-import { IConnector } from './connector-interface.js';
+import { IConnector } from './interfaces/connector-interface.js';
+import { ConnectorError } from './errors.js';
 
 /**
  * Factory for dynamically loading connectors based on system name
@@ -10,24 +11,25 @@ export class ConnectorFactory {
   /**
    * Create a connector instance for the specified system
    * @param system - System name (e.g., 'itop', 'ldap', 'servicenow')
+   * @param debug - Enable debug mode for the connector
    * @returns Promise<IConnector> - Connector instance
    */
-  static async create(system: string): Promise<IConnector> {
+  static async create(system: string, debug: boolean = false): Promise<IConnector> {
     try {
-      // Dynamic import with simple naming convention
-      const connectorModule = await import(`./connectors/${system}-connector.js`);
+      // Dynamic import with system-specific directory structure
+      const connectorModule = await import(`./connectors/${system}/${system}-connector.js`);
       
       // Convention: always export default class
       const ConnectorClass = connectorModule.default;
       
       if (!ConnectorClass) {
-        throw new Error(`Default export not found for system: ${system}`);
+        throw new ConnectorError(system, 'Default export not found');
       }
       
-      return new ConnectorClass();
+      return new ConnectorClass(debug);
     } catch (error) {
       const err = error as Error;
-      throw new Error(`Failed to load connector for system '${system}': ${err.message}`);
+      throw new ConnectorError(system, `Failed to load connector: ${err.message}`);
     }
   }
 
@@ -49,11 +51,17 @@ export class ConnectorFactory {
         return [];
       }
       
-      const files = fs.readdirSync(connectorsDir);
+      // Scan for subdirectories, each representing a system
+      const entries = fs.readdirSync(connectorsDir, { withFileTypes: true });
       
-      return files
-        .filter(file => file.endsWith('-connector.js'))
-        .map(file => file.replace('-connector.js', ''))
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
+        .filter(systemName => {
+          // Check if the system has a connector file
+          const connectorFile = path.join(connectorsDir, systemName, `${systemName}-connector.js`);
+          return fs.existsSync(connectorFile);
+        })
         .sort();
     } catch (error) {
       console.warn('Could not scan connectors directory:', error);

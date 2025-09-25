@@ -1,41 +1,25 @@
 // ===========================================
 // src/delete.ts - Delete Person Script
 // ===========================================
-import { ConnectorFactory } from './connector-factory.js';
-import { CmdUtils } from './cmd-utils.js';
+import { BaseScript } from './base-script.js';
+import { IConnector } from './interfaces/connector-interface.js';
 
-async function main(): Promise<void> {
-  try {
-    const args = process.argv.slice(2);
-    
-    // Check for debug flag
-    const debugFlag = args.includes('--debug') || args.includes('-d');
-    const filteredArgs = args.filter(arg => arg !== '--debug' && arg !== '-d');
-    
-    // Get system name (required)
-    const system = filteredArgs[0];
-    if (!system) {
-      throw new Error('System name is required as first argument (e.g., "itop", "ldap", "servicenow")');
-    }
-    
-    // Parse remaining arguments
-    const remainingArgs = filteredArgs.slice(1);
-    const { uid } = CmdUtils.parseArgs(remainingArgs);
+class DeleteScript extends BaseScript {
+  protected static override readonly operationName = 'person deletion';
 
-    if (!uid) {
-      throw new Error('UID is required for person deletion');
+  protected async performOperation(connector: IConnector): Promise<void> {
+    // Validate required fields
+    if (!this.uid) {
+      throw new Error(`uid is required for ${DeleteScript.operationName}`);
     }
 
-    // Create connector and delete person
-    const connector = await ConnectorFactory.create(system);
-    await connector.deletePerson(uid, debugFlag);
+    // Delete person
+    await connector.deletePerson(this.uid);
     
-    console.log(`Person ${uid} deleted successfully`);
-    process.exit(0);
-  } catch (error) {
-    console.error('Delete failed:', error);
-    process.exit(1);
+    console.log(`Person ${this.uid} deleted successfully`);
   }
 }
 
-main();
+// Instantiate and run the script
+const script = new DeleteScript();
+script.execute();

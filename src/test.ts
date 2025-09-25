@@ -1,37 +1,24 @@
 // ===========================================
 // src/test.ts - Test Connection Script
 // ===========================================
-import { ConnectorFactory } from './connector-factory.js';
+import { BaseScript } from './base-script.js';
+import { IConnector } from './interfaces/connector-interface.js';
 
-async function main(): Promise<void> {
-  try {
-    const args = process.argv.slice(2);
-    
-    // Check for debug flag
-    const debugFlag = args.includes('--debug') || args.includes('-d');
-    const filteredArgs = args.filter(arg => arg !== '--debug' && arg !== '-d');
-    
-    // Get system name (required)
-    const system = filteredArgs[0];
-    if (!system) {
-      throw new Error('System name is required as first argument (e.g., "itop", "ldap", "servicenow")');
-    }
-    
-    // Create connector dynamically
-    const connector = await ConnectorFactory.create(system);
-    const isConnected = await connector.testConnection(debugFlag);
+class TestScript extends BaseScript {
+  protected static override readonly operationName = 'connection test';
+
+  protected async performOperation(connector: IConnector): Promise<void> {
+    const isConnected = await connector.testConnection();
     
     if (isConnected) {
       console.log('Test successful');
-      process.exit(0);
     } else {
       console.log('Test failed');
       process.exit(1);
     }
-  } catch (error) {
-    console.error('Test failed:', error);
-    process.exit(1);
   }
 }
 
-main();
+// Instantiate and run the script
+const script = new TestScript();
+script.execute();

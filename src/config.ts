@@ -4,6 +4,7 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { ConfigurationError } from './errors.js';
 
 export interface ITopConfig {
   baseUrl: string;
@@ -21,10 +22,12 @@ function loadConfig(): ITopConfig {
     const configData = readFileSync(configPath, 'utf8');
     return JSON.parse(configData);
   } catch (error) {
-    console.error('Failed to load config from .creds/config.json:', error);
-    console.error('Please ensure .creds/config.json exists and is properly formatted.');
-    console.error('See doc/config-example.json for the expected format.');
-    process.exit(1);
+    const err = error as Error;
+    throw new ConfigurationError(
+      `Failed to load config from .creds/config.json: ${err.message}. ` +
+      'Please ensure .creds/config.json exists and is properly formatted. ' +
+      'See doc/config-example.json for the expected format.'
+    );
   }
 }
 
