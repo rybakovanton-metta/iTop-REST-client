@@ -1,4 +1,4 @@
-import { PersonData, ITopApiRequest, ITopApiResponse, CmdConnectorArgs } from '../src/types';
+import { PersonData, ITopApiRequest, ITopApiResponse, CmdConnectorArgs } from '../src/interfaces/types';
 
 describe('Type Definitions', () => {
   describe('PersonData', () => {
